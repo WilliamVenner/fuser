@@ -53,6 +53,16 @@ pub trait Reply {
     fn new<S: ReplySender>(unique: u64, sender: S) -> Self;
 }
 
+/// Trait for replies that can register a backing file for passthrough.
+#[cfg(feature = "abi-7-40")]
+pub trait ReplyBacking: Reply {
+    /// Registers a fd for passthrough, returning a `BackingId`. Once you have the backing ID,
+    /// you can pass it as a parameter to your create or open reply. This is done in two separate
+    /// steps because it may make sense to reuse backing IDs (to avoid having to repeatedly reopen
+    /// the underlying file or potentially keep thousands of fds open).
+    fn open_backing(&self, fd: impl std::os::fd::AsFd) -> std::io::Result<BackingId>;
+}
+
 ///
 /// Raw reply
 ///
@@ -284,15 +294,6 @@ impl ReplyOpen {
             .send_ll(&ll::Response::new_open(ll::FileHandle(fh), flags, 0))
     }
 
-    /// Registers a fd for passthrough, returning a `BackingId`.  Once you have the backing ID,
-    /// you can pass it as the 3rd parameter of `OpenReply::opened_passthrough()`.  This is done in
-    /// two separate steps because it may make sense to reuse backing IDs (to avoid having to
-    /// repeatedly reopen the underlying file or potentially keep thousands of fds open).
-    #[cfg(feature = "abi-7-40")]
-    pub fn open_backing(&self, fd: impl std::os::fd::AsFd) -> std::io::Result<BackingId> {
-        self.reply.sender.as_ref().unwrap().open_backing(fd.as_fd())
-    }
-
     /// Reply to a request with an opened backing id.  Call ReplyOpen::open_backing() to get one of
     /// these.
     #[cfg(feature = "abi-7-40")]
@@ -307,6 +308,13 @@ impl ReplyOpen {
     /// Reply to a request with the given error code
     pub fn error(self, err: c_int) {
         self.reply.error(err);
+    }
+}
+
+#[cfg(feature = "abi-7-40")]
+impl ReplyBacking for ReplyOpen {
+    fn open_backing(&self, fd: impl std::os::fd::AsFd) -> std::io::Result<BackingId> {
+        self.reply.sender.as_ref().unwrap().open_backing(fd.as_fd())
     }
 }
 
@@ -410,9 +418,30 @@ impl ReplyCreate {
         ))
     }
 
+    /// Reply to a request with an opened backing id.  Call ReplyCreate::open_backing() to get one of
+    /// these.
+    #[cfg(feature = "abi-7-40")]
+    pub fn created_passthrough(self, ttl: &Duration, attr: &FileAttr, generation: u64, fh: u64, flags: u32, backing_id: &BackingId) {
+        self.reply.send_ll(&ll::Response::new_create(
+            ttl,
+            &attr.into(),
+            ll::Generation(generation),
+            ll::FileHandle(fh),
+            flags,
+            backing_id.backing_id,
+        ))
+    }
+
     /// Reply to a request with the given error code
     pub fn error(self, err: c_int) {
         self.reply.error(err);
+    }
+}
+
+#[cfg(feature = "abi-7-40")]
+impl ReplyBacking for ReplyCreate {
+    fn open_backing(&self, fd: impl std::os::fd::AsFd) -> std::io::Result<BackingId> {
+        self.reply.sender.as_ref().unwrap().open_backing(fd.as_fd())
     }
 }
 

@@ -41,6 +41,8 @@ pub use reply::{
     ReplyBmap, ReplyCreate, ReplyDirectory, ReplyDirectoryPlus, ReplyIoctl, ReplyLock, ReplyLseek,
     ReplyStatfs, ReplyWrite,
 };
+#[cfg(feature = "abi-7-40")]
+pub use reply::ReplyBacking;
 pub use request::Request;
 pub use session::{BackgroundSession, Session, SessionACL, SessionUnmounter};
 #[cfg(feature = "abi-7-28")]

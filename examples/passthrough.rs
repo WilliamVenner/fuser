@@ -5,7 +5,7 @@
 use clap::{crate_version, Arg, ArgAction, Command};
 use fuser::{
     consts, BackingId, FileAttr, FileType, Filesystem, KernelConfig, MountOption, ReplyAttr,
-    ReplyDirectory, ReplyEmpty, ReplyEntry, ReplyOpen, Request,
+    ReplyDirectory, ReplyEmpty, ReplyEntry, ReplyOpen, Request, ReplyBacking
 };
 use libc::ENOENT;
 use std::collections::HashMap;
