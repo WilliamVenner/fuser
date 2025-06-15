@@ -55,7 +55,7 @@ pub trait Reply {
 
 /// Trait for replies that can register a backing file for passthrough.
 #[cfg(feature = "abi-7-40")]
-pub trait ReplyBacking: Reply {
+pub trait ReplyBacking {
     /// Registers a fd for passthrough, returning a `BackingId`. Once you have the backing ID,
     /// you can pass it as a parameter to your create or open reply. This is done in two separate
     /// steps because it may make sense to reuse backing IDs (to avoid having to repeatedly reopen
