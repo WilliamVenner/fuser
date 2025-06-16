@@ -2192,18 +2192,28 @@ impl<'a> AnyRequest<'a> {
 
 impl<'a> fmt::Display for AnyRequest<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Ok(op) = self.operation() {
-            write!(
+        match self.operation() {
+            Ok(op) => write!(
                 f,
                 "FUSE({:3}) ino {:#018x} {}",
                 self.header.unique, self.header.nodeid, op
-            )
-        } else {
-            write!(
-                f,
-                "FUSE({:3}) ino {:#018x}",
-                self.header.unique, self.header.nodeid
-            )
+            ),
+            
+            Err(RequestError::UnknownOperation(op)) => {
+                write!(
+                    f,
+                    "FUSE({:3}) ino {:#018x} UNKNOWN OPERATION {op}",
+                    self.header.unique, self.header.nodeid
+                )
+            }
+
+            Err(_) => {
+                write!(
+                    f,
+                    "FUSE({:3}) ino {:#018x}",
+                    self.header.unique, self.header.nodeid
+                )
+            }
         }
     }
 }
